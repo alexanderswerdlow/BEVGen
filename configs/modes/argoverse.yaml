@@ -1,0 +1,26 @@
+# @package _global_
+
+defaults:
+  - override /datamodule: stage_2_argoverse
+  - override /model: stage_2_argoverse
+
+tags: ["argoverse"]
+
+
+datamodule:
+  train:
+    specific_cameras: [ring_front_left, ring_front_center, ring_front_right]
+    square_image: True
+  validation:
+    specific_cameras: [ring_front_left, ring_front_center, ring_front_right]
+    square_image: True
+
+model:
+  bbox_ce_weight: 0.0
+  cfg:
+    cam_names: ARGOVERSE_FRONT_CAMERAS
+    dataset: ARGOVERSE
+
+cam_res: [256, 256]
+cam_latent_res: [16, 16]
+num_cams: 3

@@ -1,0 +1,86 @@
+# @package _global_
+defaults:
+  - override /datamodule: stage_2_rect_large
+  - override /model: stage_2_nuscenes
+
+tags: ["muse_stage_2"]
+config_name: muse_stage_2
+cam_res: [224, 400]
+cam_latent_res: [14, 25]
+base_lr: 0.0
+
+datamodule:
+  batch_size: 2
+  val_batch_size: 2
+
+model:
+  _target_: multi_view_generation.modules.stage2.cond_transformer_multi_view_muse.Net2NetTransformer
+  lr_decay: True
+  debug_viz: True
+  bbox_ce_weight: 0.0
+  bbox_warmup_steps: 0
+  warmup_steps: 0
+  ignore_keys: []
+  transformer: null
+  maskgit:
+    _target_: multi_view_generation.modules.stage2.muse_maskgit_pytorch.MaskGit
+    image_size: ${cam_latent_res}
+    cond_drop_prob: 0.1
+    self_token_critic: True
+    transformer:
+      _target_: multi_view_generation.modules.stage2.muse_maskgit_pytorch.MaskGitTransformerMultiView
+      num_tokens: ${model.first_stage.n_embed}         # must be same as codebook size above
+      seq_len: ${cam_latent_res}
+      dim: ${model.cfg.num_embed}                 # model dimension
+      depth: ${model.cfg.num_layers}                # depth
+      dim_head: 64           # attention head dimension
+      heads: ${model.cfg.num_heads}  # attention heads,
+      ff_mult: 4              # feedforward expansion factor
+      cfg: ${model.cfg}
+  cfg:
+    _target_: multi_view_generation.modules.transformer.mingpt_sparse.GPTConfig
+    output_dir: ${paths.output_dir}
+    embd_pdrop: 0.0
+    resid_pdrop: 0.0
+    attn_pdrop: 0.0
+    n_unmasked: 0
+    num_cams: ${num_cams}
+    vocab_size: ${model.first_stage.n_embed}
+    cond_vocab_size: ${model.cond_stage.n_embed}
+    hidden_size: 1024
+    num_embed: 1024
+    num_heads: 16
+    num_layers: 14
+    backend: deepspeed
+    sparse_block_size: 1
+    window_len: 32
+    cam_res: ${cam_res}
+    cam_latent_res: ${cam_latent_res}
+    plot: False
+    causal_order: True
+    camera_bias: True
+    image_embed: True
+    bev_embed: True
+    bev_latent_res: [16, 16]
+    density: 1.0
+    cam_names: NUSCENES_CAMERAS
+    dataset: NUSCENES
+    legacy_prob_matrix: false
+
+
+callbacks:
+  image_logger:
+    _target_: multi_view_generation.utils.GenerateImages
+
+trainer:
+  precision: bf16
+  strategy: deepspeed_stage_2
+
+
+
+
+
+
+
+
+

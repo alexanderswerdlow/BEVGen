@@ -1,0 +1,9 @@
+{
+    "python.analysis.typeCheckingMode": "off",
+    "search.exclude": {
+        "**/logs": true,
+        "**/archive": true,
+        "**/results": true,
+        "**/experiments": true,
+    }
+}

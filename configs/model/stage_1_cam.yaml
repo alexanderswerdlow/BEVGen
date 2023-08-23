@@ -1,0 +1,21 @@
+_target_: multi_view_generation.modules.stage1.vqgan.VQModel
+embed_dim: 256
+n_embed: 1024
+legacy: True
+cam_res: ${cam_res}
+cam_latent_res: ${cam_latent_res}
+cam_emd_dim: 256
+geometric_embedding: true # use false to avoid positional embedding on stage 1 cam
+ddconfig:
+  double_z: False
+  z_channels: 256
+  resolution: 256
+  in_channels: 3
+  out_ch: 3
+  ch: 128
+  ch_mult: [ 1,1,2,2,4 ]
+  num_res_blocks: 2
+  attn_resolutions: [ 16 ]
+  dropout: 0.0
+lossconfig:
+  _target_: multi_view_generation.modules.losses.vqperceptual.DummyLoss

@@ -1,0 +1,2 @@
+image_logger:
+  _target_: multi_view_generation.utils.GenerateImages

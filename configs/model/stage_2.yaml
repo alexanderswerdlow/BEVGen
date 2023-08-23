@@ -1,0 +1,81 @@
+_target_: multi_view_generation.modules.stage2.cond_transformer_multi_view.Net2NetTransformer
+cond_stage_key: segmentation
+debug_viz: False
+skip_sampling: False
+bbox_ce_weight: 0.0
+transformer:
+  _target_: multi_view_generation.modules.transformer.mingpt_sparse.GPT
+  cfg:
+    _target_: multi_view_generation.modules.transformer.mingpt_sparse.GPTConfig
+    embd_pdrop: 0.0
+    resid_pdrop: 0.0
+    attn_pdrop: 0.0
+    n_unmasked: 0
+    num_cams: ${num_cams}
+    vocab_size: ${model.first_stage.n_embed}
+    cond_vocab_size: 1024
+    hidden_size: 1024
+    num_embed: 1024
+    num_heads: 16
+    num_layers: 24
+    backend: deepspeed
+    sparse_block_size: 16
+    window_len: 32
+    cam_res: ${cam_res}
+    cam_latent_res: ${cam_latent_res}
+    plot: False
+    causal_order: True
+    camera_bias: False
+    image_embed: True
+    bev_embed: False
+    bev_latent_res: [16, 16]
+    density: 1.0
+    cam_names: NUSCENES_CAMERAS
+    dataset: NUSCENES
+first_stage:
+  _target_: multi_view_generation.modules.stage1.vqgan.VQModel
+  ckpt_path: pretrained/vqgan_imagenet_f16_1024.ckpt
+  denormalize: True
+  embed_dim: 256
+  n_embed: 1024
+  legacy: True
+  cam_res: ${cam_res}
+  cam_latent_res: ${cam_latent_res}
+  cam_emd_dim: 256
+  ddconfig:
+    double_z: False
+    z_channels: 256
+    resolution: 256
+    in_channels: 3
+    out_ch: 3
+    ch: 128
+    ch_mult: [ 1,1,2,2,4 ]  # num_down = len(ch_mult)-1
+    num_res_blocks: 2
+    attn_resolutions: [16]
+    dropout: 0.0
+  lossconfig:
+    _target_: multi_view_generation.modules.losses.vqperceptual.DummyLoss
+cond_stage:
+  _target_: multi_view_generation.modules.stage1.vqgan.VQSegmentationModel
+  ckpt_path: pretrained/metadrive_bev.ckpt
+  embed_dim: 256
+  n_embed: 1024
+  image_key: segmentation
+  n_labels: 3
+  denormalize: False
+  cam_res: ${cam_res}
+  cam_latent_res: ${cam_latent_res}
+  cam_emd_dim: 256
+  ddconfig:
+    double_z: False
+    z_channels: 256
+    resolution: 256
+    in_channels: 3
+    out_ch: 3
+    ch: 128
+    ch_mult: [ 1,1,2,2,4 ]  # num_down = len(ch_mult)-1
+    num_res_blocks: 2
+    attn_resolutions: [16]
+    dropout: 0.0
+  lossconfig:
+    _target_: multi_view_generation.modules.losses.vqperceptual.DummyLoss

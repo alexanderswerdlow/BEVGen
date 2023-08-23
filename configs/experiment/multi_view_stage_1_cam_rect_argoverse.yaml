@@ -1,0 +1,24 @@
+# @package _global_
+defaults:
+  - override /datamodule: stage_1_argoverse
+  - override /model: stage_1_cam
+
+tags: ["stage_1"]
+
+datamodule:
+  batch_size: 6
+  num_workers: 6
+
+model:
+  geometric_embedding: false
+
+trainer:
+  strategy:
+    _target_: pytorch_lightning.strategies.DDPStrategy
+    find_unused_parameters: true
+
+config_name: multi_view_stage_1_cam
+base_lr: 0.0
+
+cam_res: [256, 336]
+cam_latent_res: [16, 21]

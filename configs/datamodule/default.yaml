@@ -1,0 +1,6 @@
+_target_: multi_view_generation.dataloader.DataModuleFromConfig
+batch_size: 4
+num_workers: 4
+small_val: False
+smoke_test: False
+pin_memory: True

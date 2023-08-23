@@ -1,0 +1,7 @@
+defaults:
+  - rich_progress_bar.yaml
+  - image_logger.yaml
+  - _self_
+
+model_summary:
+  max_depth: -1

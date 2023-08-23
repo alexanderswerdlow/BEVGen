@@ -1,0 +1,18 @@
+# @package _global_
+
+task_name: "generate"
+
+datamodule:
+  train: null
+  validation: null
+  test:
+    split: 1
+    generate_split: [1, 0, 1]
+    eval_generate: ${paths.save_data_dir}/default
+
+callbacks:
+  image_logger:
+    save_dir: ${datamodule.test.eval_generate}
+
+trainer:
+  strategy: ddp

@@ -1,0 +1,32 @@
+# @package _global_
+
+# default debugging setup, runs 1 full epoch
+# other debugging configs can inherit from this one
+
+# overwrite task name so debugging logs are stored in separate folder
+task_name: "debug"
+    
+extras:
+  ignore_warnings: False
+  enforce_tags: False
+
+trainer:
+  max_epochs: 2
+  devices: 1 # debuggers don't like multiprocessing
+  # detect_anomaly: true # raise exception if NaN or +/-inf is detected in any tensor. breaks when attn mask uses -inf to ignore elements
+  limit_train_batches: 5
+  limit_val_batches: 1
+  num_sanity_val_steps: 0
+  val_check_interval: 1.0
+  log_every_n_steps: 1
+  check_val_every_n_epoch: 1
+
+datamodule:
+  num_workers: 0 # debuggers don't like multiprocessing
+
+callbacks:
+  image_logger:
+    save_dir: ${paths.output_dir}/debug_save_dir
+
+model:
+  skip_sampling: true

@@ -1,0 +1,18 @@
+defaults:
+  - stage_2
+  - _self_
+
+ckpt_path: pretrained/argoverse_stage_two.ckpt
+first_stage:
+  ckpt_path: pretrained/argoverse_rgb.ckpt
+  geometric_embedding: false
+cond_stage:
+  ckpt_path: pretrained/argoverse_bev.ckpt
+  geometric_embedding: false
+  cam_res: ${cam_res}
+  cam_latent_res: ${cam_latent_res}
+  cam_emd_dim: 256
+  n_labels: 7
+  ddconfig:
+    in_channels: 7
+    out_ch: 7

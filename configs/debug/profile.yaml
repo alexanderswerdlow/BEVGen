@@ -1,0 +1,16 @@
+# @package _global_
+
+defaults:
+  - debug
+
+trainer:
+  max_epochs: 1
+  limit_train_batches: 50
+  num_sanity_val_steps: 0
+  val_check_interval: 2.0
+
+datamodule:
+  num_workers: 4
+
+extras:
+  profile: True

@@ -1,0 +1,1 @@
+from multi_view_generation.dataloader.datamodule_from_config import DataModuleFromConfig

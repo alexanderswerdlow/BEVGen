@@ -1,0 +1,19 @@
+defaults: 
+  - default
+
+batch_size: 4
+num_workers: 4
+train: null
+validation: null
+test:
+  _target_: multi_view_generation.bev_utils.argoverse.Argoverse
+  split: 1
+  augment_cam_img: False
+  return_cam_img: True
+  return_bev_img: True
+  multi_camera: True
+  cam_res: ${cam_res}
+  dataset_dir: ${paths.argoverse_dir}
+  specific_cameras: [ring_front_left, ring_front_center, ring_front_right]
+  square_image: True
+  only_keyframes: True
