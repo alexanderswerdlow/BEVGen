@@ -1,6 +1,10 @@
 
 # Bird's Eye View Generation (BEVGen)
 
+[**Webpage**](https://metadriverse.github.io/bevgen/) | 
+[**Code**](https://github.com/alexanderswerdlow/BEVGen) |
+[**Paper**](https://arxiv.org/abs/2301.04634)
+
 This is the official code repository for BEVGen, "Street-View Image Generation from a Bird’s-Eye View Layout, Alexander Swerdlow, Runsheng Xu, Bolei Zhou"
 
 ## Dependencies
