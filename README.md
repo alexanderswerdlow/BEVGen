@@ -51,7 +51,7 @@ The following command will download the weights from huggingface:
 mkdir -p pretrained
 wget https://huggingface.co/aswerdlow/bevgen/resolve/main/argoverse_rgb.ckpt -P pretrained
 wget https://huggingface.co/aswerdlow/bevgen/resolve/main/argoverse_bev.ckpt -P pretrained
-wget https://huggingface.co/aswerdlow/bevgen/resolve/main/argoverse_stage_two.tar.gz -P pretrained && tar -xf pretrained/argoverse_stage_two.tar.gz -C pretrained/argoverse_stage_two.ckpt
+wget https://huggingface.co/aswerdlow/bevgen/resolve/main/argoverse_stage_two.tar.gz -P pretrained && tar -xf pretrained/argoverse_stage_two.tar.gz -C pretrained
 ```
 
 Please download
