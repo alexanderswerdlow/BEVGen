@@ -17,6 +17,8 @@ An Nvidia GPU is required for training and inference. This project has been test
 
 ## Datasets
 
+*Note*: If you need training code or support for nuScenes, see [this branch](https://github.com/alexanderswerdlow/BEVGen/tree/training).
+
 ### Argoverse 2
 
 The Argoverse 2 dataset can be downloaded [here](https://www.argoverse.org/av2.html#download-link)
