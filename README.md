@@ -36,7 +36,7 @@ av2
 In addition, to run 2nd stage training, you must pre-generate the BEV representation:
 
 ```
-python multi_view_generation/scripts/argoverse_preprocess_all_cam.py --multiprocess --save-dir ${ARGOVERSE_DATA_DIR}/generated_bev_representation
+python multi_view_generation/scripts/argoverse_preprocess.py --multiprocess --save-dir ${ARGOVERSE_DATA_DIR}/generated_bev_representation
 ```
 
 Then, you must define `bev_dir_name=generated_bev_representation` as an argument for the Argoverse dataset in the `datamodule` config.
