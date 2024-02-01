@@ -17,6 +17,25 @@ An Nvidia GPU is required for training and inference. This project has been test
 
 ## Datasets
 
+### nuScenes
+
+The nuScenes dataset can be downloaded [here](https://www.nuscenes.org/nuscenes).
+At a minimum you need nuScenes Mini + Map Expansion packs. Uncompress these and put them in the same directory. Define this directory in `configs/paths` as `nuscenes_dir`. We recomend setting `NUSCENES_DATA_DIR=...` as an enviorment variable before running instead of modifying directly as some scripts require the enviorment variable to be defined.
+
+The directory structure should look as follows (optionally with `v1.0-trainval` for full training):
+```
+nuscenes
+└───samples
+│   └───basemap
+|   └───expansion
+|   └───prediction
+└───maps
+└───sweeps
+└───v1.0-mini
+```
+
+If you wish to train with the full nuScenes dataset, you must add `extras.mini_dataset=False` as a command-line override for hydra or define it in an experiment config. This is done to speed up debugging since loading the full dataset can take ~30 seconds.
+
 ### Argoverse 2
 
 The Argoverse 2 dataset can be downloaded [here](https://www.argoverse.org/av2.html#download-link)
@@ -57,22 +76,21 @@ wget https://huggingface.co/aswerdlow/bevgen/resolve/main/argoverse_stage_two.ta
 Please download
 ## Commands
 
-Inference:
+Full Training Example for Stage 1 and 2:
 
 ```
-CUDA_VISIBLE_DEVICES=0 \
-python generate.py \
-experiment=muse_stage_two_multi_view \
-datamodule=stage_2_argoverse_generate \
-'modes=[argoverse,generate]' \
-trainer.devices=1 extras.mini_dataset=False \
-datamodule.batch_size=16 \
-'datamodule.test.eval_generate="$OUTPUT_PATH"'
+CUDA_VISIBLE_DEVICES=0,1 python train.py experiment=multi_view_stage_1_cam_rect_argoverse trainer.devices=2 extras.mini_dataset=False
+
+CUDA_VISIBLE_DEVICES=0,1 python train.py experiment=multi_view_stage_1_bev_argoverse trainer.devices=2 extras.mini_dataset=False
+
+CUDA_VISIBLE_DEVICES=0,1 python train.py experiment=muse_stage_two_multi_view trainer.devices=2 extras.mini_dataset=False
 ```
 
-You must replace `$OUTPUT_PATH` with a local path.
+To profile code, append `debug=profile`:
 
-To profile code, append `debug=profile`.
+```
+CUDA_VISIBLE_DEVICES=3 python train.py experiment=multi_view_stage_2 debug=profile
+```
 
 More info on hydra can be found [here](https://github.com/facebookresearch/hydra).
 
@@ -80,13 +98,15 @@ More info on hydra can be found [here](https://github.com/facebookresearch/hydra
 
 #### Datasets
 
-`multi_view_generation/bev_utils/argoverse.py` handles all dataloading for Argoverse 2 respectively. Note that not all combinations of configurations were tested and some may [silently] fail. Refer to `configs/datamodule` to see examples of valid configurations used.
+`multi_view_generation/bev_utils/nuscenes_dataset.py` and `multi_view_generation/bev_utils/argoverse.py` handles all dataloading for nuScenes and Argoverse 2 respectively. Note that not all combinations of configurations were tested and some may [silently] fail. Refer to `configs/datamodule` to see examples of valid configurations used.
 
 #### Image Logging
 
 Note that `multi_view_generation/utils/callback.py` handles most saving/logging of images during training and inference. We save data in 3 places: WandDB, the run directory and, if configured, a separate directory defined by `save_dir` as an argument to the callback.
 
 You also may wish to enable `rand_str` if you generate multiple samples with the same `sample_token` and save them to the same directory.
+
+The `save_nuscenes_fmt` saves the generated data in the original nuScenes data structure to allow for data augmentation applications.
 
 #### Metrics
 
@@ -95,6 +115,8 @@ You also may wish to enable `rand_str` if you generate multiple samples with the
 ## Conventions
 
 We define the angle of the camera at between [0, 2π) going counterclockwise relative to the ego reference frame.
+
+On nuScenes, this means `CAM_FRONT_RIGHT` ≈ 5.2969 rad and `CAM_FRONT_LEFT` ≈ 0.9629 rad
 
 All BEV representations have the ego vehicle frame at the center of the segmented image, pointing upwards.
 

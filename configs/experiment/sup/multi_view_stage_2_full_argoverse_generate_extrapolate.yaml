@@ -1,0 +1,16 @@
+# @package _global_
+defaults:
+  - sup/multi_view_stage_2_full_argoverse_generate_base
+
+callbacks:
+  image_logger:
+    save_dir: ${paths.save_data_dir}/sup/av2_extrapolate_topk
+
+model:
+  partial_decoding: 3
+  top_k: 200
+
+datamodule:
+  batch_size: 4
+
+config_name: multi_view_stage_2_argoverse_extrapolate

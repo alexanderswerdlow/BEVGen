@@ -18,4 +18,10 @@ ddconfig:
   attn_resolutions: [ 16 ]
   dropout: 0.0
 lossconfig:
-  _target_: multi_view_generation.modules.losses.vqperceptual.DummyLoss
+  _target_: multi_view_generation.modules.losses.vqperceptual.VQLPIPSWithDiscriminator
+  disc_conditional: false
+  disc_in_channels: 3
+  disc_start: 5000
+  disc_weight: 0.8
+  codebook_weight: 1.0
+  disc_num_layers: 2

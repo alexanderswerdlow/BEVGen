@@ -1,0 +1,11 @@
+defaults: 
+  - default
+
+batch_size: 2
+num_workers: 0
+train:
+  _target_: multi_view_generation.dataloader.nuscenes_fake_data.NuScenesDatasetFake
+  stage: stage_1
+validation:
+  _target_: multi_view_generation.dataloader.nuscenes_fake_data.NuScenesDatasetFake
+  stage: stage_1

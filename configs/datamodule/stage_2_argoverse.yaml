@@ -1,0 +1,24 @@
+defaults: 
+  - default
+
+train:
+  _target_: multi_view_generation.bev_utils.argoverse.Argoverse
+  split: 0
+  augment_cam_img: True
+  return_cam_img: True
+  return_bev_img: True
+  multi_camera: True
+  flip_imgs: True
+  cam_res: ${cam_res}
+  dataset_dir: ${paths.argoverse_dir}
+  specific_cameras: [ring_side_left, ring_front_left, ring_front_right, ring_side_right]
+validation:
+  _target_: multi_view_generation.bev_utils.argoverse.Argoverse
+  split: 1
+  augment_cam_img: False
+  return_cam_img: True
+  return_bev_img: True
+  multi_camera: True
+  cam_res: ${cam_res}
+  dataset_dir: ${paths.argoverse_dir}
+  specific_cameras: [ring_side_left, ring_front_left, ring_front_right, ring_side_right]

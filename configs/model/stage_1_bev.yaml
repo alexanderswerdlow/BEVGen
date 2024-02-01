@@ -15,4 +15,5 @@ ddconfig:
   attn_resolutions: [16]
   dropout: 0.0
 lossconfig:
-  _target_: multi_view_generation.modules.losses.vqperceptual.DummyLoss
+  _target_: multi_view_generation.modules.losses.segmentation.BCELossWithQuant
+  codebook_weight: 1.0

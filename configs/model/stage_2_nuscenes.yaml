@@ -1,0 +1,16 @@
+defaults:
+  - stage_2
+  - _self_
+
+first_stage:
+  ckpt_path: pretrained/2022-10-22_23-22-57_last.ckpt
+  geometric_embedding: true
+cond_stage:
+  ckpt_path: pretrained/2022-10-27_01-02-37_bev.ckpt
+  cam_res: ${cam_res}
+  cam_latent_res: ${cam_latent_res}
+  cam_emd_dim: 256
+  n_labels: 21
+  ddconfig:
+    in_channels: 21
+    out_ch: 21

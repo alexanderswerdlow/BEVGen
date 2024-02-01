@@ -1,0 +1,9 @@
+# @package _global_
+defaults:
+  - sup/multi_view_stage_2_full_v2_train_generate_base
+
+datamodule:
+  test:
+    eval_generate: ${paths.save_data_dir}/sup/new_model
+
+config_name: multi_view_stage_2_nuscenes_regular

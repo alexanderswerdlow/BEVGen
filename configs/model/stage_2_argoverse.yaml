@@ -1,5 +1,5 @@
 defaults:
-  - stage_2
+  - stage_2_nuscenes
   - _self_
 
 ckpt_path: pretrained/argoverse_stage_two.ckpt

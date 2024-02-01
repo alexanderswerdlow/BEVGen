@@ -1,0 +1,29 @@
+defaults: 
+  - default
+
+train:
+  _target_: torch.utils.data.ConcatDataset
+  _args_:
+    - # This is correct, ConcatDataset needs a list of datasets
+      - _target_: multi_view_generation.bev_utils.nuscenes_dataset.NuScenesDataset
+        split: 0
+        augment_cam_img: True
+        cam_res: ${cam_res}
+        mini_dataset: ${extras.mini_dataset}
+        flip_imgs: True
+        remove_metadata: True
+        dataset_dir: ${paths.nuscenes_dir}
+     - _target_: multi_view_generation.bev_utils.argoverse.Argoverse
+       split: 0
+       augment_cam_img: True
+       merge_test: True
+       flip_imgs: True
+       cam_res: 256
+validation:
+  _target_: multi_view_generation.bev_utils.nuscenes_dataset.NuScenesDataset
+  split: 1
+  augment_cam_img: True
+  cam_res: ${cam_res}
+  mini_dataset: ${extras.mini_dataset}
+  remove_metadata: True
+  dataset_dir: ${paths.nuscenes_dir}

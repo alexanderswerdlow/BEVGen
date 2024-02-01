@@ -1,0 +1,23 @@
+defaults: 
+  - default
+  
+train: null
+validation: null
+batch_size: 4
+num_workers: 4
+test:
+  _target_: multi_view_generation.bev_utils.nuscenes_dataset.NuScenesDataset
+  split: 1
+  return_cam_img: True
+  return_bev_img: True
+  return_all_cams: True
+  metadrive_compatible_v2: True
+  stage_2_training: True
+  non_square_images: True
+  only_keyframes: True
+  eval_generate: null
+  dataset_dir: ${paths.nuscenes_dir}
+  mini_dataset: ${extras.mini_dataset}
+  cam_res: ${cam_res}
+  generate_split: [1, 0, 10]
+  image_token_pickle: pretrained/ablation_samples.pkl

@@ -1,0 +1,14 @@
+# @package _global_
+defaults:
+  - sup/multi_view_stage_2_full_v2_train_generate_base
+
+datamodule:
+  batch_size: 2
+  test:
+    eval_generate: ${paths.save_data_dir}/sup/new_model_extrapolate_topk
+
+model:
+  partial_decoding: 2
+  top_k: 200
+
+config_name: multi_view_stage_2_nuscenes_extrapolate

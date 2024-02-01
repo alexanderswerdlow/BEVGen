@@ -1,0 +1,24 @@
+# @package _global_
+
+datamodule:
+  batch_size: 32
+  
+model:
+  warmup_steps: 10000
+  bbox_ce_weight: 0.0
+  maskgit:
+    transformer:
+      dim_head: 128           # attention head dimension
+  cfg:
+    num_heads: 8
+    num_layers: 8
+
+trainer:
+  reload_dataloaders_every_n_epochs: 0
+  val_check_interval: 0.5
+  check_val_every_n_epoch: 1
+  limit_val_batches: 1
+  max_epochs: 15
+
+cam_res: [144, 192]
+cam_latent_res: [9, 12]

@@ -1,0 +1,15 @@
+# @package _global_
+defaults:
+  - ablation/ablation
+  
+model:
+  bbox_ce_weight: 0.0
+  transformer:
+    cfg:
+      density: 1.0
+      causal_order: true
+      camera_bias: false
+      bev_embed: false
+      image_embed: false
+
+base_lr: 5.0e-07

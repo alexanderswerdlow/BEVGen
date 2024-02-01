@@ -18,7 +18,7 @@ trainer:
     find_unused_parameters: true
 
 config_name: multi_view_stage_1_cam
-base_lr: 0.0
+base_lr: 4.5e-06
 
 cam_res: [256, 336]
 cam_latent_res: [16, 21]

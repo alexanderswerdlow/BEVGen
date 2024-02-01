@@ -1,0 +1,31 @@
+defaults: 
+  - default
+
+batch_size: 4
+num_workers: 4
+train:
+  _target_: multi_view_generation.bev_utils.nuscenes_dataset.NuScenesDataset
+  split: 0
+  return_cam_img: True
+  return_bev_img: True
+  augment_cam_img: True
+  augment_bev_img: True
+  return_all_cams: True
+  mini_dataset: ${extras.mini_dataset}
+  metadrive_compatible: True
+  cam_res: ${cam_res}
+  stage_2_training: True
+  dataset_dir: ${paths.nuscenes_dir}
+validation:
+  _target_: multi_view_generation.bev_utils.nuscenes_dataset.NuScenesDataset
+  split: 1
+  return_cam_img: True
+  return_bev_img: True
+  augment_cam_img: False
+  augment_bev_img: False
+  return_all_cams: True
+  metadrive_compatible: True
+  stage_2_training: True
+  dataset_dir: ${paths.nuscenes_dir}
+  mini_dataset: ${extras.mini_dataset}
+  cam_res: ${cam_res}

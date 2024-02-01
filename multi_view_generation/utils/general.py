@@ -125,14 +125,6 @@ def init_from_ckpt(module, path, ignore_keys=list(), unfrozen_keys=list(), stric
     if "state_dict" in sd.keys():
         sd = sd["state_dict"]
 
-
-    for k in list(sd):
-        if k.startswith('_forward_module'):
-            tmp = sd[k]
-            del sd[k]
-            k = k.replace('_forward_module.', '')
-            sd[k] = tmp
-
     for k in list(sd):
         for ik in ignore_keys:
             if ik in k:

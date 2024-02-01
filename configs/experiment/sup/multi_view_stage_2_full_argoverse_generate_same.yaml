@@ -1,0 +1,14 @@
+# @package _global_
+defaults:
+  - sup/multi_view_stage_2_full_argoverse_generate_base
+
+datamodule:
+  batch_size: 4
+  test:
+    num_same_instances: 4
+
+callbacks:
+  image_logger:
+    save_dir: ${paths.save_data_dir}/sup/av2_same
+
+config_name: multi_view_stage_2_argoverse_same

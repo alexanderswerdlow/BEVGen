@@ -1,0 +1,24 @@
+# @package _global_
+defaults:
+  - sup/multi_view_stage_2_full_v2_train_generate_base
+
+datamodule:
+  batch_size: 4
+  single_val: true
+  test:
+    eval_generate: ${paths.save_data_dir}/sup/new_model_diff
+    duplicate_tokens_generation: null
+    same_bev_rand_density: 0.25
+
+model:
+  top_k: 300
+
+trainer:
+  check_val_every_n_epoch: 1
+  reload_dataloaders_every_n_epochs: 1
+
+callbacks:
+  image_logger:
+    rand_str: true
+
+config_name: multi_view_stage_2_nuscenes_diff

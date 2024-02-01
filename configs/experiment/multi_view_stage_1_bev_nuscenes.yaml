@@ -1,31 +1,28 @@
 # @package _global_
 defaults:
-  - override /datamodule: stage_1_argoverse
   - override /model: stage_1_bev
+  - override /datamodule: stage_1_bev_v2
 
-tags: ["stage_1"]
+tags: ["stage_1_bev"]
 
 trainer:
+  val_check_interval: 1.0
+  reload_dataloaders_every_n_epochs: 4
   strategy:
     _target_: pytorch_lightning.strategies.DDPStrategy
     find_unused_parameters: false
-
 datamodule:
-  batch_size: 4
+  batch_size: 7
   num_workers: 4
-
+    
 model:
-  geometric_embedding: false
   cam_res: ${cam_res}
   cam_latent_res: ${cam_latent_res}
   cam_emd_dim: 256
-  n_labels: 7
+  n_labels: 21
   ddconfig:
-    in_channels: 7
-    out_ch: 7
+    in_channels: 21
+    out_ch: 21
 
 config_name: multi_view_stage_1_bev
 base_lr: 4.5e-06
-
-cam_res: [256, 336]
-cam_latent_res: [16, 21]

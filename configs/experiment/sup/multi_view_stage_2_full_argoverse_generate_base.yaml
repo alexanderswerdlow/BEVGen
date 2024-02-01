@@ -1,0 +1,31 @@
+# @package _global_
+defaults:
+  - ../multi_view_stage_2_full_argoverse
+
+datamodule:
+  batch_size: 8
+  shuffle_test: False
+  test:
+    _target_: multi_view_generation.bev_utils.argoverse.Argoverse
+    split: 1
+    augment_cam_img: False
+    return_cam_img: True
+    return_bev_img: True
+    multi_camera: True
+    cam_res: ${cam_res}
+    dataset_dir: ${paths.argoverse_dir}
+    specific_cameras: [ring_side_left, ring_front_left, ring_front_right, ring_side_right]
+    specific_frames: pretrained/interesting_argoverse_image_tokens.pkl
+
+trainer:
+  limit_val_batches: null
+  reload_dataloaders_every_n_epochs: 0
+
+model:
+  ignore_keys: []
+  first_stage:
+    ckpt_path: null
+  cond_stage:
+    ckpt_path: null
+
+task_name: "generate"

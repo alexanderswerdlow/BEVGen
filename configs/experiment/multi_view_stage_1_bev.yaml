@@ -1,0 +1,13 @@
+# @package _global_
+defaults:
+  - override /datamodule: stage_1_bev
+  - override /model: stage_1_bev
+
+tags: ["stage_1_bev"]
+
+datamodule:
+  batch_size: 4
+  num_workers: 4
+
+config_name: multi_view_stage_1_bev
+base_lr: 4.5e-06

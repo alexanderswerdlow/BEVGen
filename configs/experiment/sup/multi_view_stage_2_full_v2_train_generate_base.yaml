@@ -1,0 +1,41 @@
+# @package _global_
+defaults:
+  - ../multi_view_stage_2_full_v2_train
+
+datamodule:
+  batch_size: 8
+  val_batch_size: null
+  shuffle_test: False
+  train: null
+  validation: null
+  test:
+    _target_: multi_view_generation.bev_utils.nuscenes_dataset.NuScenesDataset
+    split: 1
+    return_cam_img: True
+    return_bev_img: True
+    return_all_cams: True
+    metadrive_compatible_v2: True
+    stage_2_training: True
+    non_square_images: True
+    mini_dataset: ${extras.mini_dataset}
+    cam_res: ${cam_res}
+    dataset_dir: ${paths.nuscenes_dir}
+    frozen_image_tokens: data/interesting_image_tokens.txt
+
+trainer:
+  limit_val_batches: null
+  reload_dataloaders_every_n_epochs: 0
+
+callbacks:
+  image_logger:
+    save_dir: ${datamodule.test.eval_generate}
+
+model:
+  ckpt_path: logs/default/runs/2022-11-15_21-29-04/checkpoints/last.ckpt
+  ignore_keys: []
+  first_stage:
+    ckpt_path: null
+  cond_stage:
+    ckpt_path: null
+
+task_name: "generate"

@@ -1,0 +1,14 @@
+defaults: 
+  - stage_2
+  - _self_
+
+train:
+  metadrive_compatible: False
+  metadrive_compatible_v2: True
+  only_keyframes: False
+  non_square_images: True
+validation:
+  metadrive_compatible: False
+  metadrive_compatible_v2: True
+  only_keyframes: False
+  non_square_images: True

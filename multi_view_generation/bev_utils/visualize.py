@@ -11,6 +11,7 @@ from typing import Union
 from image_utils import Im
 from multi_view_generation.bev_utils.util import Cameras
 import multi_view_generation.bev_utils.util as util
+from multi_view_generation.bev_utils.nuscenes_helper import CLASSES
 from multi_view_generation.bev_utils import Dataset
 import torch
 import numpy as np
@@ -81,7 +82,11 @@ def viz_bev(bev: Union[np.ndarray, torch.FloatTensor], dataset: Dataset = Datase
         bev = bev.transpose(1, 2, 0)
 
     # img is (h w c) np [0, 1] float
-    if dataset == Dataset.ARGOVERSE:
+    if dataset == Dataset.NUSCENES:
+        color_dict = COLORS
+        classes = CLASSES
+        bev = bev[..., :12]
+    elif dataset == Dataset.ARGOVERSE:
         color_dict = ARGOVERSE_COLORS
         classes = ["driveable_area", "lane_divider", "ped_xing", "other", "pedestrian", "vehicle", "large_vehicle"]
         bev[..., range(bev.shape[-1])] = bev[..., [4, 5, 6, 3, 1, 0, 2]]

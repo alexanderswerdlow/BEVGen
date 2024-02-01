@@ -1,0 +1,18 @@
+# @package _global_
+defaults:
+  - ablation/ablation
+  
+datamodule:
+  batch_size: 11
+
+model:
+  bbox_ce_weight: 0.0
+  transformer:
+    cfg:
+      window_len: 96
+      density: 0.35
+      causal_order: true
+      camera_bias: true
+      bev_embed: true
+      image_embed: true
+      legacy_prob_matrix: false

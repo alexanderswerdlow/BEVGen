@@ -1,0 +1,9 @@
+# @package _global_
+defaults:
+  - sup/multi_view_stage_2_full_argoverse_generate_base
+
+callbacks:
+  image_logger:
+    save_dir: ${paths.save_data_dir}/sup/av2
+
+config_name: multi_view_stage_2_argoverse_regular

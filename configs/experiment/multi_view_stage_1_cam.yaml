@@ -1,0 +1,13 @@
+# @package _global_
+defaults:
+  - override /datamodule: stage_1_cam # stage_1_nuscenes
+  - override /model: stage_1_cam
+
+tags: ["stage_1"]
+
+datamodule:
+  batch_size: 6
+  num_workers: 6
+
+config_name: multi_view_stage_1_cam
+base_lr: 4.5e-06

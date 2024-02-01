@@ -89,6 +89,12 @@ class Net2NetTransformer(pl.LightningModule):
 
         self.downsample_cond_size = downsample_cond_size
         self.pkeep = pkeep
+        self.save_hyperparameters(ignore=['transformer', 'first_stage', 'cond_stage'])
+
+        for param in self.first_stage_model.parameters():
+            param.requires_grad = False
+        for param in self.cond_stage_model.parameters():
+            param.requires_grad = False
 
     def init_first_stage_from_ckpt(self, model):
         model = model.eval()
@@ -194,12 +200,28 @@ class Net2NetTransformer(pl.LightningModule):
         with torch.autocast(device_type='cuda', dtype=torch.float):
             _, c_indices = self.encode_to_c(c, batch)
 
-        weights = None
+        weights = self.get_token_weights(batch, inference, x) if self.bbox_ce_weight > 0 else None
         loss = self.maskgit.forward(z_indices, cond_images=c_indices, batch=batch, weights=weights)
         if isinstance(loss, tuple):
             return loss
         else:
             return loss, loss, 0
+
+    def training_step(self, batch, batch_idx):
+        loss, ce_loss, bce_critic_loss = self.shared_step(batch, batch_idx)
+        self.log("train/loss", loss, prog_bar=True, on_step=True, on_epoch=True)
+        self.log("train/ce_loss", ce_loss, prog_bar=True, on_step=True, on_epoch=True)
+        self.log("train/critic_loss", bce_critic_loss, prog_bar=True, on_step=True, on_epoch=True)
+        
+        if self.reset_random_mask > 0 and self.trainer.global_step % self.reset_random_mask == 0:
+            import time
+            start_time = time.time()
+            for b in self.transformer.blocks:
+                b.attention.randomize_layout()
+
+            log.info(f'Resetting took: {time.time() - start_time}')
+
+        return loss
 
     def validation_step(self, batch, batch_idx):
         log.info(f'Starting Val Step on Rank: {self.global_rank}, Batch Idx: {batch_idx}')
@@ -226,6 +248,39 @@ class Net2NetTransformer(pl.LightningModule):
         log.info(f'Starting test Step on Rank: {self.global_rank}')
         images = self.log_images(batch, generate_only=True)
         return images
+
+    def configure_optimizers(self):        
+        optimizer = torch.optim.AdamW(self.parameters(), lr = self.learning_rate, betas = (0.9, 0.99), eps = 1e-8)
+        if not self.lr_decay:
+            return optimizer
+
+        def update_lr(*_):
+            config = self.hparams
+
+            if self.trainer.global_step < config.warmup_steps:
+                # linear warmup
+                lr_mult = float(self.trainer.global_step) / float(max(1, config.warmup_steps))
+                lr_mult = max(lr_mult, 1e-2)  # could be that we've not seen any yet
+            else:
+                # cosine learning rate decay
+                progress = float(self.trainer.global_step - config.warmup_steps) / float(
+                    max(1, self.trainer.estimated_stepping_batches - config.warmup_steps)
+                )
+                lr_mult = max(0.1, 0.5 * (1.0 + np.cos(np.pi * progress)))
+
+            return lr_mult
+
+        lr_scheduler = {
+            "scheduler": torch.optim.lr_scheduler.LambdaLR(
+                optimizer,
+                lr_lambda=[update_lr],
+            ),
+            "name": "learning_rate",
+            "interval": "step",  # The unit of the scheduler's step size
+            "frequency": 1,  # The frequency of the scheduler
+        }
+
+        return [optimizer], [lr_scheduler]
 
     @torch.no_grad()
     def log_images(self, batch, generate_only=False, **kwargs):
@@ -284,3 +339,68 @@ class Net2NetTransformer(pl.LightningModule):
 
         log.info(f'Generating images took {round(time.time() - start_time, 3)} on Rank {self.global_rank}')
         return ret
+
+    def get_token_weights(self, batch, inference, x):
+        bboxes = batch['bbx'].clone()
+        bboxes = bboxes.to(torch.float)
+        bboxes[:, :, :, [0, 2]] *= self.cfg.cam_latent_w
+        bboxes[:, :, :, [1, 3]] *= self.cfg.cam_latent_h
+
+        bboxes[:, :, :, [0, 1]] = torch.floor(bboxes[:, :, :, [0, 1]])
+        bboxes[:, :, :, [2, 3]] = torch.ceil(bboxes[:, :, :, [2, 3]])
+
+        bboxes[:, :, :, [0, 2]] = torch.clamp(bboxes[:, :, :, [0, 2]], max=self.cfg.cam_latent_w)
+        bboxes[:, :, :, [1, 3]] = torch.clamp(bboxes[:, :, :, [1, 3]], max=self.cfg.cam_latent_h)
+        bboxes = bboxes.to(torch.long)
+
+        # Bounding boxes and points.
+        batch_size = bboxes.shape[0]
+        num_bboxes = bboxes.shape[-2]
+        grid_y, grid_x = torch.meshgrid(torch.arange(0, self.cfg.cam_latent_h), torch.arange(0, self.cfg.cam_latent_w))
+        points = torch.cat([rearrange(torch.stack((grid_x, grid_y), 2), 'h w ... -> (h w) ...'), torch.arange(self.cfg.num_cam_tokens)[..., None]], dim=-1).to(bboxes.device)
+
+        points = repeat(points, '... -> batch num_cams ...', num_cams=self.cfg.num_cams, batch=batch_size)
+        old_points = points
+        points = repeat(points, 'batch num_cams cam_tokens ... -> batch num_cams cam_tokens num_bboxes ...',
+                        num_bboxes=num_bboxes, cam_tokens=self.cfg.num_cam_tokens, num_cams=self.cfg.num_cams, batch=batch_size)
+
+        # Create the conditions necessary to determine if a point is within a bounding box.
+        # x >= left, x <= right, y >= top, y <= bottom
+        bboxes = rearrange(bboxes, 'batch num_cams num_bboxes ... -> (batch num_cams num_bboxes) ...', num_bboxes=num_bboxes, num_cams=self.cfg.num_cams, batch=batch_size)
+        points = rearrange(points, 'batch num_cams cam_tokens num_bboxes ... -> cam_tokens (batch num_cams num_bboxes) ...',
+                            num_bboxes=num_bboxes, cam_tokens=self.cfg.num_cam_tokens, num_cams=self.cfg.num_cams, batch=batch_size)
+        c1 = points[:, :, 0] <= bboxes[:, 2]
+        c2 = points[:, :, 0] >= bboxes[:, 0]
+        c3 = points[:, :, 1] <= bboxes[:, 3]
+        c4 = points[:, :, 1] >= bboxes[:, 1]
+
+        # Add all of the conditions together. If all conditions are met, sum is 4.
+        # Afterwards, get all point indices that meet the condition (a.k.a. all non-zero mask-summed values)
+        mask = c1.to(torch.long) + c2.to(torch.long) + c3.to(torch.long) + c4.to(torch.long)
+        mask = torch.nonzero(rearrange((mask == 4), 'cam_tokens (batch num_cams num_bboxes) -> batch num_cams cam_tokens num_bboxes',
+                                num_bboxes=num_bboxes, cam_tokens=self.cfg.num_cam_tokens, num_cams=self.cfg.num_cams, batch=batch_size).sum(dim=-1))
+
+        weight = torch.full((batch_size * self.cfg.num_img_tokens,), 1, dtype=torch.float).to(batch['image'].device)
+
+        # Select all points that meet the condition.
+        output = torch.cat([mask[:, [0, 1]], old_points[mask[:, 0], mask[:, 1], mask[:, 2], -1, None]], dim=-1)  # batch_idx, cam_idx, cam_latent_idx [0, cam_latent_h * cam_latent_w)
+
+        seq_idx = output[:, 0] * self.cfg.num_img_tokens + (output[:, 2] + output[:, 1] * self.cfg.num_cam_tokens)
+        weight[seq_idx] = linear_step(self.bbox_warmup_steps, self.bbox_ce_weight, self.trainer.global_step)
+
+        viz_weight = torch.full((batch_size * self.cfg.num_img_tokens,), 0, dtype=torch.float).to(batch['image'].device)
+        viz_weight[seq_idx] = 1
+
+        if not inference and self.debug_viz and self.trainer.global_step % 500 == 0:
+            x_all = self.expand_all_images(x)
+            for i in range(self.cfg.num_cams):
+                self.logger.experiment.log({f"BBOX_WEIGHT_{self.cfg.cam_names[i]}": wandb.Image(repeat(((viz_weight[i * self.cfg.num_cam_tokens: (i + 1) * self.cfg.num_cam_tokens].reshape(
+                    *self.cfg.cam_latent_res).detach().cpu().numpy()) * 255).astype(np.uint8), '... -> ... c', c=3)), "global_step": self.trainer.global_step})
+                box_data = []
+                for j in range(batch['bbx'].shape[2]):
+                    if batch['bbx_mask'][0, i, j].item():
+                        minx, maxx, miny, maxy = batch['bbx'][0, i, j][0].item(), batch['bbx'][0, i, j][2].item(), batch['bbx'][0, i, j][1].item(), batch['bbx'][0, i, j][3].item()
+                        box_data.append({"position": {"minX": minx, "maxX": maxx, "minY": miny, "maxY": maxy}, "class_id": 0, })
+                self.logger.experiment.log({f"BBOX_{self.cfg.cam_names[i]}": wandb.Image(x_all[0, i], boxes={"predictions": {"box_data": box_data}}), "global_step": self.trainer.global_step})
+
+        return weight

@@ -1,0 +1,19 @@
+defaults: 
+  - default
+
+train:
+  _target_: multi_view_generation.bev_utils.nuscenes_dataset.NuScenesDataset
+  split: 0
+  augment_cam_img: True
+  cam_res: ${cam_res}
+  mini_dataset: ${extras.mini_dataset}
+  remove_metadata: True
+  dataset_dir: ${paths.nuscenes_dir}
+validation:
+  _target_: multi_view_generation.bev_utils.nuscenes_dataset.NuScenesDataset
+  split: 1
+  augment_cam_img: True
+  cam_res: ${cam_res}
+  mini_dataset: ${extras.mini_dataset}
+  remove_metadata: True
+  dataset_dir: ${paths.nuscenes_dir}

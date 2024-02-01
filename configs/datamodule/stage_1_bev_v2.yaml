@@ -1,0 +1,30 @@
+defaults: 
+  - default
+  
+train:
+  _target_: torch.utils.data.ConcatDataset
+  _args_:
+    - 
+      - _target_: multi_view_generation.bev_utils.nuscenes_dataset.NuScenesDataset
+        split: 0
+        return_cam_img: False
+        return_bev_img: True
+        augment_bev_img: True
+        mini_dataset: ${extras.mini_dataset}
+        dataset_dir: ${paths.nuscenes_dir}
+        metadrive_compatible: False
+        metadrive_compatible_v2: True
+        only_keyframes: True
+      - _target_: multi_view_generation.bev_utils.metadrive_dataset.MetadriveDataset
+        augment_bev_img: True
+validation:
+  _target_: multi_view_generation.bev_utils.nuscenes_dataset.NuScenesDataset
+  split: 1
+  metadrive_compatible: False
+  metadrive_compatible_v2: True
+  return_cam_img: False
+  return_bev_img: True
+  augment_bev_img: False
+  mini_dataset: ${extras.mini_dataset}
+  dataset_dir: ${paths.nuscenes_dir}
+  only_keyframes: True

@@ -142,6 +142,27 @@ class VQModel(pl.LightningModule):
         x = x.permute(0, 3, 1, 2).to(memory_format=torch.contiguous_format)
         return x.float()
 
+    def training_step(self, batch, batch_idx, optimizer_idx):
+        x = self.get_input(batch, self.image_key)
+        xrec, qloss = self(x, batch)
+
+        if optimizer_idx == 0:
+            # autoencode
+            aeloss, log_dict_ae = self.loss(qloss, x, xrec, optimizer_idx, self.global_step,
+                                            last_layer=self.get_last_layer(), split="train")
+
+            self.log("train/aeloss", aeloss, sync_dist=False)
+            self.log_dict(log_dict_ae, sync_dist=False)
+            return aeloss
+
+        if optimizer_idx == 1:
+            # discriminator
+            discloss, log_dict_disc = self.loss(qloss, x, xrec, optimizer_idx, self.global_step,
+                                            last_layer=self.get_last_layer(), split="train")
+            self.log("train/discloss", discloss, sync_dist=False)
+            self.log_dict(log_dict_disc, sync_dist=False)
+            return discloss
+
     def validation_step(self, batch, batch_idx):
         x = self.get_input(batch, self.image_key)
         xrec, qloss = self(x, batch)
@@ -228,6 +249,16 @@ class VQSegmentationModel(VQModel):
                                   lr=lr, betas=(0.5, 0.9))
         return opt_ae
 
+    def training_step(self, batch, batch_idx):
+        x = self.get_input(batch, self.image_key)
+        xrec, qloss = self(x, batch)
+        aeloss, log_dict_ae = self.loss(qloss, x, xrec, split="train")
+        self.log_dict(log_dict_ae, prog_bar=False, logger=True, on_step=True, on_epoch=True)
+        ret = {'loss': aeloss}
+        if batch_idx % 500 == 0:
+            ret = {**ret, **self.log_images(batch)}
+        return ret
+
     def validation_step(self, batch, batch_idx):
         x = self.get_input(batch, self.image_key)
         xrec, qloss = self(x, batch)
@@ -275,6 +306,17 @@ class VQNoDiscModel(VQModel):
         super().__init__(ddconfig=ddconfig, lossconfig=lossconfig, n_embed=n_embed, embed_dim=embed_dim,
                          ckpt_path=ckpt_path, ignore_keys=ignore_keys, image_key=image_key,
                          colorize_nlabels=colorize_nlabels)
+
+    def training_step(self, batch, batch_idx):
+        x, intrinsics, extrinsics = self.get_input(batch, self.image_key)
+        xrec, qloss = self(x, intrinsics, extrinsics)
+        # autoencode
+        aeloss, log_dict_ae = self.loss(qloss, x, xrec, self.global_step, split="train")
+        output = pl.TrainResult(minimize=aeloss)
+        output.log("train/aeloss", aeloss,
+                   prog_bar=True, logger=True, on_step=True, on_epoch=True)
+        output.log_dict(log_dict_ae, prog_bar=False, logger=True, on_step=True, on_epoch=True)
+        return output
 
     def validation_step(self, batch, batch_idx):
         x, intrinsics, extrinsics = self.get_input(batch, self.image_key)
@@ -351,6 +393,27 @@ class GumbelVQ(VQModel):
 
     def decode_code(self, code_b):
         raise NotImplementedError
+
+    def training_step(self, batch, batch_idx, optimizer_idx):
+        self.temperature_scheduling()
+        x, intrinsics, extrinsics = self.get_input(batch, self.image_key)
+        xrec, qloss = self(x, intrinsics, extrinsics)
+
+        if optimizer_idx == 0:
+            # autoencode
+            aeloss, log_dict_ae = self.loss(qloss, x, xrec, optimizer_idx, self.global_step,
+                                            last_layer=self.get_last_layer(), split="train")
+
+            self.log_dict(log_dict_ae, prog_bar=False, logger=True, on_step=True, on_epoch=True)
+            self.log("temperature", self.quantize.temperature, prog_bar=False, logger=True, on_step=True, on_epoch=True)
+            return aeloss
+
+        if optimizer_idx == 1:
+            # discriminator
+            discloss, log_dict_disc = self.loss(qloss, x, xrec, optimizer_idx, self.global_step,
+                                            last_layer=self.get_last_layer(), split="train")
+            self.log_dict(log_dict_disc, prog_bar=False, logger=True, on_step=True, on_epoch=True)
+            return discloss
 
     def validation_step(self, batch, batch_idx):
         x, intrinsics, extrinsics = self.get_input(batch, self.image_key)

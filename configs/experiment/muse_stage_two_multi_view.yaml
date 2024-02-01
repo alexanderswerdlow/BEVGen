@@ -7,7 +7,7 @@ tags: ["muse_stage_2"]
 config_name: muse_stage_2
 cam_res: [224, 400]
 cam_latent_res: [14, 25]
-base_lr: 0.0
+base_lr: 3.0e-04
 
 datamodule:
   batch_size: 2
@@ -18,8 +18,8 @@ model:
   lr_decay: True
   debug_viz: True
   bbox_ce_weight: 0.0
-  bbox_warmup_steps: 0
-  warmup_steps: 0
+  bbox_warmup_steps: 20000
+  warmup_steps: 10000
   ignore_keys: []
   transformer: null
   maskgit:
@@ -73,8 +73,17 @@ callbacks:
     _target_: multi_view_generation.utils.GenerateImages
 
 trainer:
+  accumulate_grad_batches: 1
+  val_check_interval: 0.05
+  check_val_every_n_epoch: 1
+  limit_val_batches: 10
+  num_sanity_val_steps: 1
+  max_epochs: 50
   precision: bf16
   strategy: deepspeed_stage_2
+  gradient_clip_val: 100
+
+
 
 
 

@@ -1,0 +1,35 @@
+# @package _global_
+defaults:
+  - ../multi_view_stage_2_full_v2
+
+trainer:
+  max_epochs: 50
+  limit_val_batches: 50
+  gradient_clip_val: 40
+  accumulate_grad_batches: 1
+
+datamodule:
+  batch_size: 8
+  num_workers: 6
+  val_batch_size: 2
+  num_gpus: null
+  train:
+    metadrive_compatible: False
+    metadrive_compatible_v2: True
+    select_cameras: [0, 2, 3]
+  validation:
+    metadrive_compatible: False
+    metadrive_compatible_v2: True
+    select_cameras: [0, 2, 3]
+
+model:
+  ignore_keys: []
+  ckpt_path: null
+  debug_viz: True
+  skip_sampling: False
+  transformer:
+    cfg:
+      cam_names: NUSCENES_ABLATION_CAMERAS
+
+base_lr: 7.5e-07
+num_cams: 3
